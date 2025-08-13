@@ -5,25 +5,25 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🎬 YouTube Downloader</h1>
-        <input type="text" id="url" placeholder="Enter YouTube URL">
-        <button id="fetchBtn">Fetch Video Info</button>
-        <div id="error" class="error"></div>
+<div class="container">
+    <h1>🎬 YouTube Downloader</h1>
+    <input type="text" id="url" placeholder="Enter YouTube URL">
+    <button id="fetchBtn">Fetch Video Info</button>
+    <div id="error" class="error"></div>
 
-        <div class="video-info hidden" id="videoInfo">
-            <img id="thumbnail" src="" alt="Thumbnail">
-            <p id="title"></p>
-            <p id="uploader"></p>
-            <p id="duration"></p>
-            <select id="option">
-                <option value="video">Video (1080p if available)</option>
-                <option value="audio">Audio (MP3)</option>
-            </select>
-            <button id="downloadBtn">Download</button>
-            <p id="status"></p>
-        </div>
+    <div class="video-info hidden" id="videoInfo">
+        <img id="thumbnail" src="" alt="Thumbnail">
+        <p id="title"></p>
+        <p id="uploader"></p>
+        <p id="duration"></p>
+        <select id="option">
+            <option value="video">Video (1080p if available)</option>
+            <option value="audio">Audio (MP3)</option>
+        </select>
+        <button id="downloadBtn">Download</button>
+        <p id="status"></p>
     </div>
+</div>
 
 <script>
 const fetchBtn = document.getElementById("fetchBtn");

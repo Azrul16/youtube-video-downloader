@@ -1,9 +1,9 @@
-import imageio_ffmpeg
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_file
 import os
 import yt_dlp
 import uuid
 import threading
+import imageio_ffmpeg
 
 app = Flask(__name__)
 DOWNLOAD_DIR = "downloads"
@@ -19,6 +19,9 @@ def download_file(url, option, file_id):
                 "format": "bestvideo[height<=1080]+bestaudio/best",
                 "merge_output_format": "mp4",
                 "outtmpl": f"{DOWNLOAD_DIR}/{file_id}.%(ext)s",
+                "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
+                "nocheckcertificate": True,
+                "ignoreerrors": True
             }
             output_file = f"{file_id}.mp4"
         else:  # audio
@@ -32,6 +35,9 @@ def download_file(url, option, file_id):
                         "preferredquality": "192",
                     }
                 ],
+                "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
+                "nocheckcertificate": True,
+                "ignoreerrors": True
             }
             output_file = f"{file_id}.mp3"
 
@@ -45,12 +51,11 @@ def download_file(url, option, file_id):
         downloads[file_id]["error"] = str(e)
 
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
     return render_template("index.html")
 
 
-# Fetch video info (title, thumbnail, duration)
 @app.route("/info", methods=["POST"])
 def info():
     data = request.json
@@ -59,16 +64,25 @@ def info():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        with yt_dlp.YoutubeDL({"quiet": True}) as ydl:
+        with yt_dlp.YoutubeDL({
+            "quiet": True,
+            "ffmpeg_location": imageio_ffmpeg.get_ffmpeg_exe(),
+            "nocheckcertificate": True,
+            "ignoreerrors": True,
+            "format": "best",
+            "extract_flat": False
+        }) as ydl:
             info = ydl.extract_info(url, download=False)
+            if info is None or "title" not in info:
+                return jsonify({"error": "Cannot fetch video info. Video may be restricted."}), 400
             return jsonify({
                 "title": info.get("title"),
                 "thumbnail": info.get("thumbnail"),
                 "duration": info.get("duration"),
                 "uploader": info.get("uploader")
             })
-    except Exception:
-        return jsonify({"error": "Invalid YouTube link or video unavailable"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Invalid YouTube link or video unavailable. ({str(e)})"}), 400
 
 
 @app.route("/start_download", methods=["POST"])
@@ -81,7 +95,6 @@ def start_download():
     file_id = str(uuid.uuid4())
     downloads[file_id] = {"status": "downloading"}
 
-    # Start async download
     thread = threading.Thread(target=download_file, args=(url, option, file_id))
     thread.start()
 
