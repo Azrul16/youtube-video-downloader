@@ -83,9 +83,9 @@ downloadBtn.onclick = async () => {
                 statusP.textContent = "Download complete!";
             } else if (statusData.status === "error") {
                 clearInterval(interval);
-                statusP.textContent = "Download failed: " + statusData.error;
+                statusP.textContent = statusData.error;
             } else {
-                statusP.textContent = "Downloading... please wait";
+                statusP.textContent = `Downloading... ${statusData.progress || 0}%`;
             }
         }, 2000);
     } catch (err) {

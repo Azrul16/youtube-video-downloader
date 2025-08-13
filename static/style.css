@@ -13,7 +13,7 @@ body {
     padding: 30px;
     border-radius: 15px;
     text-align: center;
-    width: 350px;
+    width: 400px;
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
@@ -45,11 +45,8 @@ button:hover {
 .video-info {
     margin-top: 15px;
     background: rgba(255,255,255,0.1);
-    padding: 15px;
+    padding: 10px;
     border-radius: 10px;
 }
-
 .hidden { display: none; }
-
-#error { color: #ff6b6b; margin-top: 5px; }
-#status { margin-top: 10px; color: #ffd700; }
+.error { color: #ff6b6b; margin-top: 10px; }
