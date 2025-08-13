@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 YouTube Downloader</h1>
+        <input type="text" id="url" placeholder="Enter YouTube URL">
+        <button id="fetchBtn">Fetch Video Info</button>
+        <div id="error" class="error"></div>
+
+        <div class="video-info hidden" id="videoInfo">
+            <img id="thumbnail" src="" alt="Thumbnail">
+            <p id="title"></p>
+            <p id="uploader"></p>
+            <p id="duration"></p>
+            <select id="option">
+                <option value="video">Video (1080p if available)</option>
+                <option value="audio">Audio (MP3)</option>
+            </select>
+            <button id="downloadBtn">Download</button>
+            <p id="status"></p>
+        </div>
+    </div>
+
+<script>
+const fetchBtn = document.getElementById("fetchBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const urlInput = document.getElementById("url");
+const errorDiv = document.getElementById("error");
+const videoInfoDiv = document.getElementById("videoInfo");
+const statusP = document.getElementById("status");
+
+fetchBtn.onclick = async () => {
+    const url = urlInput.value;
+    if (!url) return;
+    errorDiv.textContent = "Fetching video info...";
+    try {
+        const res = await fetch("/info", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({url})
+        });
+        const data = await res.json();
+        if (data.error) {
+            errorDiv.textContent = data.error;
+            videoInfoDiv.classList.add("hidden");
+            return;
+        }
+        errorDiv.textContent = "";
+        videoInfoDiv.classList.remove("hidden");
+        document.getElementById("thumbnail").src = data.thumbnail;
+        document.getElementById("title").textContent = "🎬 " + data.title;
+        document.getElementById("uploader").textContent = "📺 " + (data.uploader || "Unknown");
+        document.getElementById("duration").textContent = "⏳ " + formatDuration(data.duration);
+    } catch (err) {
+        errorDiv.textContent = "Failed to fetch video info";
+    }
+};
+
+downloadBtn.onclick = async () => {
+    const url = urlInput.value;
+    const option = document.getElementById("option").value;
+    statusP.textContent = "Starting download...";
+    try {
+        const res = await fetch("/start_download", {
+            method: "POST",
+            body: new URLSearchParams({url, option})
+        });
+        const data = await res.json();
+        const file_id = data.file_id;
+
+        const interval = setInterval(async () => {
+            const statusRes = await fetch(`/status/${file_id}`);
+            const statusData = await statusRes.json();
+            if (statusData.status === "ready") {
+                clearInterval(interval);
+                const link = document.createElement("a");
+                link.href = `/download/${file_id}`;
+                link.click();
+                statusP.textContent = "Download complete!";
+            } else if (statusData.status === "error") {
+                clearInterval(interval);
+                statusP.textContent = "Download failed: " + statusData.error;
+            } else {
+                statusP.textContent = "Downloading... please wait";
+            }
+        }, 2000);
+    } catch (err) {
+        statusP.textContent = "Download failed";
+    }
+};
+
+function formatDuration(seconds) {
+    if (!seconds) return "Unknown";
+    const h = Math.floor(seconds/3600);
+    const m = Math.floor((seconds%3600)/60);
+    const s = seconds%60;
+    return `${h>0?h+":" : ""}${m}:${s.toString().padStart(2,"0")}`;
+}
+</script>
+</body>
+</html>
