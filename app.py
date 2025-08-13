@@ -79,9 +79,9 @@ def info():
     if not url:
         return jsonify({"error": "No URL provided"}), 400
     try:
-        cmd = ["yt-dlp", "--dump-json", "--no-warnings", url]
+        cmd = ["yt-dlp", "--dump-json", "--no-warnings", "--skip-download", url]
         result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
+        if result.returncode != 0 or not result.stdout.strip():
             return jsonify({"error": "Video unavailable or restricted"}), 400
         import json
         info = json.loads(result.stdout)
@@ -92,7 +92,7 @@ def info():
             "duration": info.get("duration")
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "Cannot fetch video info. " + str(e)}), 400
 
 
 @app.route("/start_download", methods=["POST"])
