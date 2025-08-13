@@ -12,8 +12,16 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 downloads = {}  # Track download status
 
 
+def clean_url(url):
+    """Remove query parameters from the YouTube URL"""
+    if url:
+        return url.split("?")[0]
+    return url
+
+
 def download_file(url, option, file_id):
     try:
+        url = clean_url(url)
         if option == "video":
             ydl_opts = {
                 "format": "bestvideo[height<=1080]+bestaudio/best",
@@ -59,7 +67,7 @@ def home():
 @app.route("/info", methods=["POST"])
 def info():
     data = request.json
-    url = data.get("url")
+    url = clean_url(data.get("url"))
     if not url:
         return jsonify({"error": "No URL provided"}), 400
 
@@ -74,7 +82,7 @@ def info():
         }) as ydl:
             info = ydl.extract_info(url, download=False)
             if info is None or "title" not in info:
-                return jsonify({"error": "Cannot fetch video info. Video may be restricted."}), 400
+                return jsonify({"error": "Cannot fetch video info. Video may be restricted, private, or unavailable."}), 400
             return jsonify({
                 "title": info.get("title"),
                 "thumbnail": info.get("thumbnail"),
@@ -82,12 +90,12 @@ def info():
                 "uploader": info.get("uploader")
             })
     except Exception as e:
-        return jsonify({"error": f"Invalid YouTube link or video unavailable. ({str(e)})"}), 400
+        return jsonify({"error": f"Cannot fetch video info. Video may be restricted or unavailable. ({str(e)})"}), 400
 
 
 @app.route("/start_download", methods=["POST"])
 def start_download():
-    url = request.form.get("url")
+    url = clean_url(request.form.get("url"))
     option = request.form.get("option")
     if not url:
         return jsonify({"error": "Please enter a YouTube URL."}), 400
